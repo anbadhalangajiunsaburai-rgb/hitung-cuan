@@ -1,8 +1,80 @@
-import React from 'react';
-import { Lock, Zap, FileText, CheckCircle2, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Lock, Zap, FileText, CheckCircle2, X, Loader2 } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
-export default function PaywallModal({ isOpen, onClose, message }) {
+export default function PaywallModal({ isOpen, onClose, message, onUpgradeSuccess }) {
+  const [isLoading, setIsLoading] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleBuyDaily = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Silakan login terlebih dahulu!");
+      return;
+    }
+    
+    setIsLoading(true);
+
+    try {
+      const orderId = `ORDER-${user.uid}-${Date.now()}`;
+      
+      const response = await fetch('/api/tokenize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: orderId,
+          amount: 3000,
+          customerName: user.displayName || 'Juragan UMKM',
+          customerEmail: user.email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.token) {
+        throw new Error('Gagal mendapatkan token pembayaran');
+      }
+
+      window.snap.pay(data.token, {
+        onSuccess: async function (result) {
+          console.log('Payment success:', result);
+          
+          // Update status user di Firebase (Sistem Tiket 1 Hari)
+          const userRef = doc(db, 'users', user.uid);
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          
+          await updateDoc(userRef, {
+            isPremium: true,
+            premiumUntil: tomorrow.toISOString(),
+            lastPaymentOrderId: orderId
+          });
+
+          if(onUpgradeSuccess) onUpgradeSuccess();
+          alert('Pembayaran Berhasil! Akun Anda aktif 24 jam.');
+          onClose();
+        },
+        onPending: function (result) {
+          alert('Pembayaran tertunda. Silakan selesaikan pembayaran Anda.');
+          setIsLoading(false);
+        },
+        onError: function (result) {
+          alert('Pembayaran gagal. Silakan coba lagi.');
+          setIsLoading(false);
+        },
+        onClose: function () {
+          setIsLoading(false);
+        }
+      });
+      
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      alert('Terjadi kesalahan saat memproses pembayaran.');
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
@@ -55,8 +127,13 @@ export default function PaywallModal({ isOpen, onClose, message }) {
                 <li className="flex items-center gap-1.5"><CheckCircle2 size={14} className="text-green-500" /> Smart Pricing Pesaing</li>
                 <li className="flex items-center gap-1.5 text-slate-400"><X size={14} className="text-red-400" /> <span className="line-through">Cetak Laporan PDF</span></li>
               </ul>
-              <button className="w-full mt-4 py-2 bg-orange-100 text-orange-700 font-bold rounded-lg group-hover:bg-orange-500 group-hover:text-white transition-colors text-sm">
-                Beli Tiket Harian
+              <button 
+                onClick={handleBuyDaily}
+                disabled={isLoading}
+                className="w-full mt-4 py-2 flex justify-center items-center gap-2 bg-orange-100 text-orange-700 font-bold rounded-lg group-hover:bg-orange-500 group-hover:text-white transition-colors text-sm disabled:opacity-50"
+              >
+                {isLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+                {isLoading ? 'Memproses...' : 'Beli Tiket Harian via QRIS/GoPay'}
               </button>
             </div>
 
