@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calculator, BookOpen, TrendingUp, Sparkles, Package, HelpCircle, Trash2, Loader2, Lock, Store, ArrowRight, X, Wallet } from 'lucide-react';
+import { Calculator, BookOpen, TrendingUp, Sparkles, Package, HelpCircle, Trash2, Loader2, Lock, Store, ArrowRight, X, Wallet, Zap } from 'lucide-react';
 import { collection, query, where, getDocs, doc, setDoc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import OnboardingModal from '../components/OnboardingModal';
