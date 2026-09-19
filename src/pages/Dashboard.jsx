@@ -117,11 +117,12 @@ export default function Dashboard({ user, subscription, triggerPaywall }) {
     fetchData();
   }, [user]);
 
-  const handleSaveOnboarding = async (shopName) => {
+  const handleSaveOnboarding = async (data) => {
     try {
       const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, { shopName }, { merge: true });
-      setUserData({ ...userData, shopName });
+      const updateData = typeof data === 'string' ? { shopName: data } : data;
+      await setDoc(userRef, updateData, { merge: true });
+      setUserData({ ...userData, ...updateData });
       setShowOnboarding(false);
       
       // Upsell instantly after onboarding
@@ -129,7 +130,7 @@ export default function Dashboard({ user, subscription, triggerPaywall }) {
         setTimeout(() => triggerPaywall("Nikmati akses tanpa batas untuk semua fitur kalkulator HPP & Laba Rugi!"), 500);
       }
     } catch (error) {
-      console.error("Error saving shop name:", error);
+      console.error("Error saving onboarding data:", error);
     }
   };
 
@@ -199,7 +200,8 @@ export default function Dashboard({ user, subscription, triggerPaywall }) {
     </div>
   );
 
-  const shopNameDisplay = userData?.shopName || user?.displayName?.split(' ')[0] || 'Juragan';
+  const shopNameDisplay = userData?.shopName || 'Bisnis Kuliner';
+  const ownerNameDisplay = userData?.ownerName || user?.displayName?.split(' ')[0] || 'Juragan';
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8 relative">
@@ -217,15 +219,24 @@ export default function Dashboard({ user, subscription, triggerPaywall }) {
             <Store size={20} className="text-orange-500" /> {shopNameDisplay}
           </div>
           <h1 className="text-4xl font-black text-slate-800 mb-2">
-            Halo, Owner {shopNameDisplay}! 👋
+            Halo {ownerNameDisplay}, Owner {shopNameDisplay}!
           </h1>
           <p className="text-slate-500 text-lg">Kelola HPP dan operasional bisnismu di sini.</p>
         </div>
-        {isPremium && (
-          <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/20 flex items-center gap-2">
-            <Sparkles size={16} /> Member Premium
-          </div>
-        )}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {isPremium ? (
+            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2">
+              <Sparkles size={18} /> Premium Member
+            </div>
+          ) : (
+            <button 
+              onClick={() => triggerPaywall("Upgrade akun Anda untuk membuka semua fitur tak terbatas!")}
+              className="bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-amber-400 px-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95"
+            >
+              <Lock size={16} className="text-amber-400/80" /> Beli Premium (Rp 3.000/Hari)
+            </button>
+          )}
+        </div>
       </div>
 
       {subscription === 'free' && <AdSenseSpace format="banner" />}

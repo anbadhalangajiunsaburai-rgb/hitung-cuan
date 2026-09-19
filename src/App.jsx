@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { LogOut, Trash2, Key } from 'lucide-react'
+import { LogOut, Trash2, Key, User } from 'lucide-react'
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom'
 import './index.css'
 import LandingPage from './pages/LandingPage'
@@ -9,6 +9,7 @@ import MasterGudang from './pages/MasterGudang'
 import UserGuide from './pages/UserGuide'
 import LabaRugi from './pages/LabaRugi'
 import MasterOperasional from './pages/MasterOperasional'
+import Profile from './pages/Profile'
 import PaywallModal from './components/PaywallModal'
 import Logo from './components/Logo'
 import { auth, db } from './firebase'
@@ -157,14 +158,16 @@ function App() {
               <Logo size="md" />
             </Link>
             <div className="flex items-center gap-2 sm:gap-4">
-              {user.email && (
-                <span className="text-sm font-medium text-slate-600 hidden md:inline-block">
-                  {user.email}
-                </span>
-              )}
+              <Link 
+                to="/profil"
+                className="btn btn-outline text-xs sm:text-sm !border-slate-200 !text-slate-600 hover:!bg-slate-50 py-1.5 px-3 rounded-xl flex items-center gap-2"
+                title="Profil Saya"
+              >
+                <User size={16} /> <span className="hidden sm:inline">Profil</span>
+              </Link>
               <button 
                 onClick={handleLogout}
-                className="btn btn-outline text-xs sm:text-sm !border-slate-200 !text-slate-600 hover:!bg-slate-50 py-1.5 px-3 rounded-xl flex items-center gap-2"
+                className="btn btn-outline text-xs sm:text-sm !border-red-200 !text-red-600 hover:!bg-red-50 py-1.5 px-3 rounded-xl flex items-center gap-2"
                 title="Keluar"
               >
                 <LogOut size={16} /> <span className="hidden sm:inline">Keluar</span>
@@ -182,6 +185,7 @@ function App() {
             <Route path="/operasional" element={<MasterOperasional user={user} subscription={subscription} triggerPaywall={triggerPaywall} />} />
             <Route path="/laba-rugi" element={<LabaRugi user={user} subscription={subscription} triggerPaywall={triggerPaywall} />} />
             <Route path="/panduan" element={<UserGuide />} />
+            <Route path="/profil" element={<Profile user={user} subscription={subscription} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
