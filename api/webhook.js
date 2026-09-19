@@ -45,9 +45,10 @@ export default async function handler(req, res) {
 
     console.log(`Webhook received for order: ${orderId}, status: ${transactionStatus}`);
 
-    // Ekstrak UID User dari Order ID
+    // Ekstrak UID dan Plan dari Order ID
     const parts = orderId.split('-');
     const uid = parts.length > 1 ? parts[1] : null;
+    const plan = parts.length > 2 ? parts[2] : 'harian';
 
     if (!uid) {
       console.error('Invalid Order ID format, missing UID');
@@ -61,17 +62,22 @@ export default async function handler(req, res) {
         return res.status(200).json({ status: 'ignored, fraud detected' });
       }
 
-      // Aktifkan Premium selama 24 Jam
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      // Aktifkan Premium (1 Hari / 7 Hari)
+      const expiryDate = new Date();
+      if (plan === 'mingguan') {
+        expiryDate.setDate(expiryDate.getDate() + 7);
+      } else {
+        expiryDate.setDate(expiryDate.getDate() + 1);
+      }
 
       await db.collection('users').doc(uid).set({
         isPremium: true,
-        premiumUntil: tomorrow.toISOString(),
+        premiumPlan: plan,
+        premiumUntil: expiryDate.toISOString(),
         lastPaymentOrderId: orderId
       }, { merge: true });
 
-      console.log(`Successfully granted 24h Premium to user: ${uid}`);
+      console.log(`Successfully granted ${plan} Premium to user: ${uid}`);
     }
 
     res.status(200).json({ status: 'success' });

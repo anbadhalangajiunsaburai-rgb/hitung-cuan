@@ -225,15 +225,23 @@ export default function Dashboard({ user, subscription, triggerPaywall }) {
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           {isPremium ? (
-            <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2">
-              <Sparkles size={18} /> Premium Member
-            </div>
+            <>
+              <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2">
+                <Sparkles size={18} /> {subscription === 'mingguan' ? 'Premium Bos Besar' : 'Premium Ketengan'}
+              </div>
+              <button 
+                onClick={() => triggerPaywall("Perpanjang atau Upgrade paket Anda sekarang!")}
+                className="bg-white border border-amber-500 text-amber-600 hover:bg-amber-50 px-5 py-2.5 rounded-full font-bold text-sm flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95 shadow-sm"
+              >
+                <Zap size={16} /> Upgrade Paket
+              </button>
+            </>
           ) : (
             <button 
-              onClick={() => triggerPaywall("Upgrade akun Anda untuk membuka semua fitur tak terbatas!")}
+              onClick={() => triggerPaywall("Pilih paket yang pas buat bisnis lu dan buka semua fiturnya!")}
               className="bg-gradient-to-r from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 text-amber-400 px-5 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-slate-900/20 flex items-center justify-center gap-2 transition-all transform hover:scale-105 active:scale-95"
             >
-              <Lock size={16} className="text-amber-400/80" /> Beli Premium (Rp 3.000/Hari)
+              <Lock size={16} className="text-amber-400/80" /> Beli Premium
             </button>
           )}
         </div>

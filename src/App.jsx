@@ -43,7 +43,7 @@ function App() {
               if (data.isPremium && data.premiumUntil) {
                 const expiryDate = new Date(data.premiumUntil);
                 if (expiryDate > new Date()) {
-                  setSubscription('premium');
+                  setSubscription(data.premiumPlan || 'harian');
                   setPremiumExpiry(expiryDate);
                 } else {
                   setSubscription('free');

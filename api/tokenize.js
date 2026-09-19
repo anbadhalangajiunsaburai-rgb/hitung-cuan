@@ -6,14 +6,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { orderId, amount, customerName, customerEmail } = req.body;
+    // Tambahkan 'plan' ke parameter yang diterima
+    const { orderId, amount, customerName, customerEmail, plan = 'harian' } = req.body;
 
-    // Create Snap API instance
     let snap = new midtransClient.Snap({
       isProduction: false,
-      serverKey: process.env.VITE_MIDTRANS_SERVER_KEY, // We will set this in Vercel / .env
+      serverKey: process.env.VITE_MIDTRANS_SERVER_KEY,
       clientKey: process.env.VITE_MIDTRANS_CLIENT_KEY,
     });
+
+    const itemName = plan === 'mingguan' ? 'Akses Premium 7 Hari' : 'Akses Premium 1 Hari';
+    const itemId = plan === 'mingguan' ? 'TIKET-MINGGUAN' : 'TIKET-HARIAN';
 
     let parameter = {
       transaction_details: {
@@ -26,13 +29,12 @@ export default async function handler(req, res) {
       },
       item_details: [
         {
-          id: 'TIKET-HARIAN',
+          id: itemId,
           price: amount,
           quantity: 1,
-          name: 'Akses Premium 1 Hari',
+          name: itemName,
         }
       ],
-      // Filter payment methods to only allow QRIS and E-Wallets to avoid fixed VA fees
       enabled_payments: ['gopay', 'shopeepay', 'qris', 'other_qris'],
     };
 

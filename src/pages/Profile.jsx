@@ -154,9 +154,9 @@ export default function Profile({ user, subscription }) {
             {isPremium ? (
               <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-5 text-white shadow-lg">
                 <div className="flex items-center gap-2 font-black text-xl mb-1">
-                  <Key size={24} className="text-amber-100" /> Premium Aktif
+                  <Key size={24} className="text-amber-100" /> {subscription === 'mingguan' ? 'Paket Bos Besar (Mingguan)' : 'Paket Ketengan (Harian)'}
                 </div>
-                <p className="text-amber-100 text-sm">Anda memiliki akses penuh ke semua fitur.</p>
+                <p className="text-amber-100 text-sm">Anda memiliki akses {subscription === 'mingguan' ? 'penuh ke semua fitur termasuk Cetak PDF.' : 'Premium harian tanpa batas resep.'}</p>
               </div>
             ) : (
               <div className="bg-slate-100 rounded-2xl p-5 border border-slate-200">
