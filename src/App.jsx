@@ -27,12 +27,47 @@ function App() {
     setPaywallConfig({ isOpen: true, message });
   };
 
+  const [premiumExpiry, setPremiumExpiry] = useState(null);
+
   useEffect(() => {
+    let unsubDoc = null;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setAuthLoading(false);
+      
+      if (currentUser) {
+        import('firebase/firestore').then(({ doc, onSnapshot }) => {
+          unsubDoc = onSnapshot(doc(db, 'users', currentUser.uid), (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data.isPremium && data.premiumUntil) {
+                const expiryDate = new Date(data.premiumUntil);
+                if (expiryDate > new Date()) {
+                  setSubscription('premium');
+                  setPremiumExpiry(expiryDate);
+                } else {
+                  setSubscription('free');
+                  setPremiumExpiry(null);
+                }
+              } else {
+                setSubscription('free');
+                setPremiumExpiry(null);
+              }
+            }
+            setAuthLoading(false);
+          });
+        });
+      } else {
+        setSubscription('free');
+        setPremiumExpiry(null);
+        setAuthLoading(false);
+        if (unsubDoc) unsubDoc();
+      }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribe();
+      if (unsubDoc) unsubDoc();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -88,20 +123,36 @@ function App() {
   }
 
   if (!user) {
-    // Reset URL ke root (/) setiap kali user dalam keadaan logout.
-    // Ini mencegah bug di mana user login lalu terlempar ke halaman terakhir mereka.
     if (window.location.pathname !== '/') {
       window.history.replaceState(null, '', '/');
     }
     return <LandingPage />
   }
 
+  // Calculate remaining hours and minutes
+  let remainingText = '';
+  if (subscription === 'premium' && premiumExpiry) {
+    const now = new Date();
+    const diffMs = premiumExpiry - now;
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    remainingText = `${diffHrs} Jam ${diffMins} Menit`;
+  }
+
   return (
     <BrowserRouter>
       <div className="min-h-screen flex flex-col relative z-10">
+        {/* Premium Banner */}
+        {subscription === 'premium' && (
+          <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-center py-2 px-4 text-sm font-medium shadow-sm flex items-center justify-center gap-2">
+            <Key size={16} className="text-amber-100" />
+            <span>Akun Premium Aktif! Sisa Waktu: <strong>{remainingText}</strong></span>
+          </div>
+        )}
+
         {/* Global Header */}
         <header className="bg-white/80 backdrop-blur-md border-b border-orange-100 sticky top-0 z-50 shadow-sm">
-          <div className="w-full max-w-6xl mx-auto px-4 py-5 flex justify-between items-center">
+          <div className="w-full max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
             <Link to="/" className="flex items-center gap-2 text-decoration-none hover:opacity-90 transition-opacity">
               <Logo size="md" />
             </Link>
@@ -113,7 +164,7 @@ function App() {
               )}
               <button 
                 onClick={handleLogout}
-                className="btn btn-outline text-xs sm:text-sm !border-slate-200 !text-slate-600 hover:!bg-slate-50 py-1.5 px-3 rounded-xl"
+                className="btn btn-outline text-xs sm:text-sm !border-slate-200 !text-slate-600 hover:!bg-slate-50 py-1.5 px-3 rounded-xl flex items-center gap-2"
                 title="Keluar"
               >
                 <LogOut size={16} /> <span className="hidden sm:inline">Keluar</span>
@@ -138,6 +189,7 @@ function App() {
         <PaywallModal 
           isOpen={paywallConfig.isOpen} 
           message={paywallConfig.message} 
+          user={user}
           onClose={() => setPaywallConfig({ ...paywallConfig, isOpen: false })} 
         />
       </div>
