@@ -1,0 +1,2 @@
+{proUnits.map(u => <option key={u} value={u}>{u} 🔒</option>)}{proUnits.map(u => <option key={u} value={u}>{u}{subscription === 'free' ? ' 🔒' : ''}</option>)}
+{proUnits.map(u => <option key={u} value={u}>{u} 🔒</option>)}
