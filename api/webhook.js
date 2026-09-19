@@ -1,12 +1,13 @@
 import crypto from 'crypto';
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-// Initialize Firebase Admin (Singleton untuk mencegah error re-initialize di Vercel)
-if (!admin.apps.length) {
+// Initialize Firebase Admin
+if (!getApps().length) {
   try {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+    initializeApp({
+      credential: cert(serviceAccount)
     });
     console.log('Firebase Admin initialized successfully');
   } catch (error) {
@@ -19,7 +20,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
-  const db = admin.apps.length ? admin.firestore() : null;
+  const db = getApps().length ? getFirestore() : null;
   if (!db) {
     console.error('Firestore is not initialized');
     return res.status(500).json({ message: 'Database config error' });
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
   try {
     const notification = req.body;
     
-    // 1. Verifikasi Signature Key (Keamanan anti-hacker)
+    // Verifikasi Signature Key
     const serverKey = process.env.VITE_MIDTRANS_SERVER_KEY;
     const signatureKeyInput = notification.order_id + notification.status_code + notification.gross_amount + serverKey;
     const expectedSignatureKey = crypto.createHash('sha512').update(signatureKeyInput).digest('hex');
@@ -44,9 +45,8 @@ export default async function handler(req, res) {
 
     console.log(`Webhook received for order: ${orderId}, status: ${transactionStatus}`);
 
-    // 2. Ekstrak UID User dari Order ID
+    // Ekstrak UID User dari Order ID
     const parts = orderId.split('-');
-    // Karena formatnya ORDER-UID-TIMESTAMP, index ke-1 adalah UID
     const uid = parts.length > 1 ? parts[1] : null;
 
     if (!uid) {
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ignored, invalid order id format' });
     }
 
-    // 3. Update Database Firebase jika Sukses
+    // Update Database Firebase jika Sukses
     if (transactionStatus === 'capture' || transactionStatus === 'settlement') {
       if (transactionStatus === 'capture' && fraudStatus !== 'accept') {
         console.log('Transaction capture but fraud status is not accept.');
@@ -74,7 +74,6 @@ export default async function handler(req, res) {
       console.log(`Successfully granted 24h Premium to user: ${uid}`);
     }
 
-    // Midtrans wajib dibalas dengan HTTP 200 OK
     res.status(200).json({ status: 'success' });
   } catch (error) {
     console.error('Midtrans Webhook Error:', error);
