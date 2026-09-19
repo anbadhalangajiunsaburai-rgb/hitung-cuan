@@ -14,11 +14,15 @@ if (!admin.apps.length) {
   }
 }
 
-const db = admin.firestore();
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const db = admin.apps.length ? admin.firestore() : null;
+  if (!db) {
+    console.error('Firestore is not initialized');
+    return res.status(500).json({ message: 'Database config error' });
   }
 
   try {
