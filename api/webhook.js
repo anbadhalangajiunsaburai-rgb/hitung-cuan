@@ -65,11 +65,11 @@ export default async function handler(req, res) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      await db.collection('users').doc(uid).update({
+      await db.collection('users').doc(uid).set({
         isPremium: true,
         premiumUntil: tomorrow.toISOString(),
         lastPaymentOrderId: orderId
-      });
+      }, { merge: true });
 
       console.log(`Successfully granted 24h Premium to user: ${uid}`);
     }
