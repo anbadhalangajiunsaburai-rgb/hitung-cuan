@@ -45,10 +45,20 @@ export default async function handler(req, res) {
 
     console.log(`Webhook received for order: ${orderId}, status: ${transactionStatus}`);
 
-    // Ekstrak UID dan Plan dari Order ID
+    // Ekstrak UID dan Plan dari Order ID (Format: UID-W/D-TIMESTAMP)
     const parts = orderId.split('-');
-    const uid = parts.length > 1 ? parts[1] : null;
-    const plan = parts.length > 2 ? parts[2] : 'harian';
+    
+    // Support legacy "ORDER-UID-..." format just in case
+    let uid = null;
+    let plan = 'harian';
+    
+    if (parts[0] === 'ORDER') {
+      uid = parts.length > 1 ? parts[1] : null;
+      plan = parts.length > 2 ? parts[2] : 'harian';
+    } else {
+      uid = parts.length > 0 ? parts[0] : null;
+      plan = (parts.length > 1 && parts[1] === 'W') ? 'mingguan' : 'harian';
+    }
 
     if (!uid) {
       console.error('Invalid Order ID format, missing UID');

@@ -20,7 +20,10 @@ export default function PaywallModal({ isOpen, onClose, message, onUpgradeSucces
     setLoadingPlan(planType);
 
     try {
-      const orderId = `ORDER-${user.uid}-${planType}-${Date.now()}`;
+      // orderId max 50 chars for Midtrans!
+      // uid (28) + '-' + plan (1) + '-' + timestamp (13) = 43 chars
+      const pCode = planType === 'mingguan' ? 'W' : 'D';
+      const orderId = `${user.uid}-${pCode}-${Date.now()}`;
       
       const response = await fetch('/api/tokenize', {
         method: 'POST',
